@@ -13,6 +13,7 @@ public:
 	Shader(const char* vertexShaderPath, const char* fragmentShaderPath);
 
 	void use();
+	void unuse();
 	void deleteShader();
 
 	void setVec4f(const char* name, glm::vec4 vector);

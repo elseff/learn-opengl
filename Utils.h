@@ -13,7 +13,7 @@ namespace Utils {
 	extern Direction direction;
 	extern const double speed;
 
-	void processInput(GLFWwindow* window, glm::mat4& matrix);
+	void processInput(GLFWwindow* window);
 	std::string readFromFile(std::string path);
 	// Функция для печати матрицы 4x4
 	void printMatrix(const glm::mat4& matrix);

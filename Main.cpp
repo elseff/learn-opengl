@@ -4,19 +4,21 @@
 #include "Utils.h"
 #include "Shader.h"
 #include <stb_image/stb_image.h>
-
+#include "Camera.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/mat4x4.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void scaleCamera(double yoffset);
 
-glm::mat4 matrix = glm::mat4(1.0f);
+//struct UserData {
+//	glm::mat4 viewMatrix;
+//	glm::vec2 mousePos;
+//};
 
 int main()
 {
@@ -49,8 +51,12 @@ int main()
 
 	glViewport(0, 0, width, height);
 
+	//UserData userData;
+
+	//glm::vec2 mousePos = glm::vec2(0.0f);
+	//userData.mousePos = mousePos;
+
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	glfwSetScrollCallback(window, scroll_callback);
 
 #if 0
 	int nrAttributes;
@@ -129,15 +135,25 @@ int main()
 
 	//shader.setMat4f("transform", matrix);
 
-	
+
 	bool state = true;
 	float angleVisibility = 45.0f;
 
-	glm::vec3 eye = glm::vec3(0.0f, angleVisibility/50.0f+1, 5.0f);
-	glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-	glm::mat4 view = glm::lookAt(eye, target, up);
-	
+
+	Camera camera(window,
+				  glm::vec3(0.0f, 2.0f, 5.0f), // position
+				  glm::vec3(0.0f), // target
+		          glm::vec3(0.0f, 1.0f, 0.0f)); // up
+
+	//userData.viewMatrix = camera.view;
+
+	glm::mat4 view = camera.view;
+
+	//glm::vec3 eye = glm::vec3(0.0f, angleVisibility / 50.0f + 1, 5.0f);
+	//glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
+	//glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+	//glm::mat4 view = glm::lookAt(eye, target, up);
+
 	glm::mat4 projection = glm::perspective(glm::radians(angleVisibility), (float)width / (float)height, 0.1f, 100.0f); //WORK
 	//glm::mat4 projection = glm::ortho((float)width / -2.0f, (float)width/2.0f, (float)height / -2.0f, (float)height/2.0f, -100.0f, 100.0f);
 	//glm::mat4 projection = glm::ortho(-(float)width/2.0f, (float)width/2.0f, -(float)height/2.0f, (float)height/2.0f, -100.0f, 100.0f);
@@ -146,18 +162,34 @@ int main()
 	shader.setMat4f("projection", projection);
 
 	//matrix = glm::scale(matrix, glm::vec3(width / 3.0f, height / 3.0f, 0.5f));
-	matrix = glm::scale(matrix, glm::vec3(angleVisibility/50.0f));
+	//userData.viewMatrix = glm::scale(userData.viewMatrix, glm::vec3(angleVisibility / 50.0f));
+
+
+#if 0
 	std::cout << "view\n";
 	Utils::printMatrix(view);
 	std::cout << "projection\n";
 	Utils::printMatrix(projection);
 	std::cout << "view*projection\n";
-	Utils::printMatrix(projection*view);
-
+	Utils::printMatrix(projection * view);
+#endif
 	glEnable(GL_DEPTH_TEST);
 	float angle = 0.0f;
+	float lastFrame = 0.0;
 	while (!glfwWindowShouldClose(window))
 	{
+
+#if 0 
+#if 1
+		//clear console
+		std::cout << "\033[2J\033[1;1H";
+#endif
+		float currentFrame = static_cast<float>(glfwGetTime());
+		float deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+		std::cout << "delta:" << deltaTime << "\n";
+		std::cout << "fps:" << static_cast<int>(1.0f / deltaTime) << "\n";
+#endif
 		/*if (scaleValue >= 1.0f) {
 			state = false;
 		}
@@ -173,10 +205,17 @@ int main()
 			angle -= 1.8f / 50;
 		}*/
 		//matrix = glm::mat4(1.0f);
-		matrix = glm::rotate(matrix, glm::radians(1.8f), glm::vec3(0.0f, 0.5f, 0.0f));
-		Utils::processInput(window, matrix);
-	
-		
+	    //userData.modelMatrix = glm::rotate(userData.modelMatrix, glm::radians(1.8f), glm::vec3(0.0f, 0.5f, 0.0f));
+
+		//userData.viewMatrix = glm::rotate(userData.viewMatrix, glm::radians(0.9f), glm::vec3(0.0f, 0.5f, 0.0f));
+		shader.use();
+		camera.move();
+		camera.rotate();
+		//userData.viewMatrix = camera.view;
+
+		Utils::processInput(window);
+		//glfwSetWindowUserPointer(window, &userData);
+
 		//matrix = glm::scale(matrix, glm::vec3(scaleValue));
 
 		//matrix = glm::scale(glm::mat4(1.0f), glm::vec3(scaleValue));
@@ -184,7 +223,7 @@ int main()
 
 		//matrix = glm::translate(glm::mat4(1.0f), glm::vec3(scaleValue-1, scaleValue-1, 0.0f)); 
 		// !!!! matrix-vector product order very significant!
-		shader.setMat4f("model", matrix);
+		shader.setMat4f("model", camera.view);
 		//shader.setMat4f("view", view);
 
 		glClearColor(0.7f, 0.5f, 0.8f, 1.0f);
@@ -193,8 +232,6 @@ int main()
 
 		time = (float)glfwGetTime();
 		red = (abs(sin(time)) / 1.5f) + 0.2f;
-
-		shader.use();
 
 		shader.setVec4f("uniform_color", glm::vec4(red, 0.0f, 0.0f, 1.0f));
 
@@ -211,6 +248,7 @@ int main()
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+		shader.unuse();
 	}
 
 	glDeleteVertexArrays(1, &VAO);
@@ -225,20 +263,5 @@ int main()
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-    glViewport(0, 0, width, height);
-}  
-
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-	scaleCamera(yoffset);
-}
-
-void scaleCamera(double yoffset) {
-	//Utils::printMatrix(matrix);
-	if (yoffset > 0) {
-		matrix = glm::scale(matrix, glm::vec3(1.0f+yoffset/10.0f));
-	}
-	else {
-		matrix = glm::scale(matrix, glm::vec3(1.0f + yoffset / 10.0f));
-	}
+	glViewport(0, 0, width, height);
 }

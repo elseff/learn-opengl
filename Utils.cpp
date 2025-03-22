@@ -1,7 +1,6 @@
 ﻿#include "Utils.h"
 #include "Consts.h"
 
-
 #include <iostream>
 #include <string>
 #include <fstream>  // для std::ifstream
@@ -24,7 +23,7 @@ namespace Utils {
 
 	std::unordered_map<int, bool> pressedKeys;
 
-	void processInput(GLFWwindow* window, glm::mat4& matrix)
+	void processInput(GLFWwindow* window)
 	{
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 			glfwSetWindowShouldClose(window, true);
